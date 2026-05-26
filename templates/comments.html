@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Комментарии</title></head>
+<body>
+    <h1>📝 Комментарии</h1>
+    <form method="POST" action="/comments">
+        <textarea name="comment_text" rows="4" cols="50" placeholder="Ваш комментарий..."></textarea>
+        <br>
+        <button type="submit">Отправить</button>
+    </form>
+    <h2>Список комментариев ({{ comments|length }})</h2>
+    {% for c in comments %}
+        <div>{{ c|safe }}</div>
+    {% endfor %}
+    <hr>
+    <p><a href="/vulnerable/comments">⚠️ Уязвимая версия (для теста XSS)</a></p>
+</body>
+</html>
