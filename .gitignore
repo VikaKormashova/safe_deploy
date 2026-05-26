@@ -3,3 +3,12 @@ venv/
 venv*/
 __pycache__/
 *.pyc
+
+# Mac OS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumbs.db
