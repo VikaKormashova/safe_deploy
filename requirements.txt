@@ -13,6 +13,7 @@ defusedxml==0.7.1
 distlib==0.4.0
 fastapi==0.104.1
 filelock==3.29.0
+filetype==1.2.0
 h11==0.16.0
 identify==2.6.19
 idna==3.16
