@@ -1,65 +1,92 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
-from jinja2 import Template
-import bleach
+from starlette.middleware.sessions import SessionMiddleware
+import secrets
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 
-comments_db = []
+secret_key = secrets.token_urlsafe(32)
+app.add_middleware(SessionMiddleware, secret_key=secret_key)
 
-def sanitize_text(text: str) -> str:
-    allowed_tags = ['b', 'i', 'u', 'em', 'strong']
-    return bleach.clean(text, tags=allowed_tags, strip=True)
+users_db = {
+    "alice": {"username": "alice", "role": "user", "password": "alice123"},
+    "bob": {"username": "bob", "role": "user", "password": "bob123"},
+    "admin": {"username": "admin", "role": "admin", "password": "admin123"},
+}
 
-# ===== CSP MIDDLEWARE (ДОБАВЛЯЕМ ЗАГОЛОВКИ) =====
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    return response
+files_db = [
+    {"id": 1, "filename": "report_alice.pdf", "owner": "alice", "size": 1024},
+    {"id": 2, "filename": "photo_bob.jpg", "owner": "bob", "size": 2048},
+    {"id": 3, "filename": "admin_keys.txt", "owner": "admin", "size": 512},
+]
 
-@app.get("/comments")
-def show_comments(request: Request):
-    return templates.TemplateResponse("comments.html", {
-        "request": request,
-        "comments": comments_db
-    })
+def get_current_user(request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
 
-@app.post("/comments")
-def add_comment(comment_text: str = Form(...)):
-    safe_comment = sanitize_text(comment_text)
-    comments_db.append(safe_comment)
-    return RedirectResponse(url="/comments", status_code=303)
-
-@app.get("/vulnerable/comments")
-def vulnerable_comments(request: Request):
-    html = """
+@app.get("/login")
+def login_form():
+    return HTMLResponse('''
     <html>
     <body>
-        <h1>⚠️ УЯЗВИМАЯ СТРАНИЦА ⚠️</h1>
-        <form method="POST" action="/vulnerable/comments">
-            <textarea name="comment_text" rows="4" cols="50"></textarea><br>
-            <button type="submit">Отправить</button>
+        <h1>Login</h1>
+        <form method="post">
+            <input type="text" name="username" placeholder="Username"><br>
+            <input type="password" name="password" placeholder="Password"><br>
+            <button type="submit">Login</button>
         </form>
-        <h2>Комментарии:</h2>
-        {% for c in comments %}
-            <div>{{ c|safe }}</div>
-        {% endfor %}
-        <p><a href="/comments">Перейти на защищённую страницу</a></p>
+        <p>alice/alice123, bob/bob123, admin/admin123</p>
     </body>
     </html>
-    """
-    return HTMLResponse(content=Template(html).render(comments=comments_db))
+    ''')
 
-@app.post("/vulnerable/comments")
-def vulnerable_add_comment(comment_text: str = Form(...)):
-    comments_db.append(comment_text)
-    return RedirectResponse(url="/vulnerable/comments", status_code=303)
+@app.post("/login")
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    user = users_db.get(username)
+    if not user or user["password"] != password:
+        return HTMLResponse("Login failed", status_code=401)
+    request.session["user"] = {"username": user["username"], "role": user["role"]}
+    return RedirectResponse(url="/files/my", status_code=303)
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login")
+
+@app.get("/files/my")
+def get_my_files(request: Request):
+    user = get_current_user(request)
+    my_files = [f for f in files_db if f["owner"] == user["username"]]
+    return {"files": my_files}
+
+@app.get("/files/{file_id}")
+def get_file(request: Request, file_id: int):
+    user = get_current_user(request)
+    file = next((f for f in files_db if f["id"] == file_id), None)
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    if file["owner"] != user["username"] and user["role"] != "admin":
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"id": file["id"], "filename": file["filename"], "owner": file["owner"], "size": file["size"]}
+
+@app.delete("/files/{file_id}")
+def delete_file(request: Request, file_id: int):
+    global files_db
+    user = get_current_user(request)
+    file = next((f for f in files_db if f["id"] == file_id), None)
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    if file["owner"] != user["username"] and user["role"] != "admin":
+        raise HTTPException(status_code=404, detail="File not found")
+    files_db = [f for f in files_db if f["id"] != file_id]
+    return {"message": "File deleted"}
 
 @app.get("/")
 def root():
-    return {"message": "API работает", "endpoints": ["/comments", "/vulnerable/comments"]}
+    return {"message": "Corporate File Manager API"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
