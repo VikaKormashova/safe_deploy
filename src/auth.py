@@ -1,7 +1,6 @@
 from fastapi import HTTPException, Request
 import uuid
 import os
-from datetime import datetime
 
 STORAGE_DIR = "storage"
 
@@ -12,9 +11,9 @@ users_db = {
 }
 
 files_db = [
-    {"id": 1, "filename": "report_alice.pdf", "owner": "alice", "size": 1024, "path": None},
-    {"id": 2, "filename": "photo_bob.jpg", "owner": "bob", "size": 2048, "path": None},
-    {"id": 3, "filename": "admin_keys.txt", "owner": "admin", "size": 512, "path": None},
+    {"id": 1, "filename": "report_alice.pdf", "owner": "alice", "size": 1024, "path": None, "is_encrypted": False},
+    {"id": 2, "filename": "photo_bob.jpg", "owner": "bob", "size": 2048, "path": None, "is_encrypted": False},
+    {"id": 3, "filename": "admin_keys.txt", "owner": "admin", "size": 512, "path": None, "is_encrypted": False},
 ]
 
 next_file_id = 4
@@ -38,7 +37,7 @@ def check_file_permission(file_id: int, user: dict):
 def get_user_files(user: dict):
     return [f for f in files_db if f["owner"] == user["username"]]
 
-def save_file_metadata(original_name: str, owner: str, size: int, physical_path: str):
+def save_file_metadata(original_name: str, owner: str, size: int, physical_path: str, is_encrypted: bool = False):
     global next_file_id
     file_id = next_file_id
     next_file_id += 1
@@ -47,7 +46,8 @@ def save_file_metadata(original_name: str, owner: str, size: int, physical_path:
         "filename": original_name,
         "owner": owner,
         "size": size,
-        "path": physical_path
+        "path": physical_path,
+        "is_encrypted": is_encrypted
     }
     files_db.append(new_file)
     return new_file
