@@ -1,0 +1,11 @@
+venv
+venv_new
+__pycache__
+*.pyc
+.env
+.git
+.gitignore
+.DS_Store
+storage
+*.md
+reports/images
