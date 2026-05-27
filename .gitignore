@@ -13,3 +13,4 @@ __pycache__/
 # Thumbnails
 Thumbs.db
 storage/
+logs/

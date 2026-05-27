@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Request
 import uuid
 import os
+from src.logger_config import logger
 
 STORAGE_DIR = "storage"
 
@@ -27,10 +28,12 @@ def get_current_user(request: Request):
 def check_file_permission(file_id: int, user: dict):
     file = next((f for f in files_db if f["id"] == file_id), None)
     if not file:
+        logger.warning(f"File access denied - file_id={file_id} not found")
         raise HTTPException(status_code=404, detail="File not found")
     is_owner = file["owner"] == user["username"]
     is_admin = user["role"] == "admin"
     if not (is_owner or is_admin):
+        logger.warning(f"SECURITY: User '{user['username']}' attempted to access file '{file['filename']}' (owner: {file['owner']})")
         raise HTTPException(status_code=404, detail="File not found")
     return file
 
@@ -50,6 +53,7 @@ def save_file_metadata(original_name: str, owner: str, size: int, physical_path:
         "is_encrypted": is_encrypted
     }
     files_db.append(new_file)
+    logger.info(f"File saved - id={file_id}, name='{original_name}', owner='{owner}', size={size}, encrypted={is_encrypted}")
     return new_file
 
 def get_file_by_id(file_id: int):
