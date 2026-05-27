@@ -1,10 +1,15 @@
 repos:
   - repo: local
     hooks:
+      - id: bandit
+        name: bandit
+        entry: bandit -r src/ -ll
+        language: system
+        files: \.py$
+        pass_filenames: false
       - id: pip-audit
         name: pip-audit
         entry: pip-audit -r requirements.txt
         language: system
         files: requirements.txt
         pass_filenames: false
-

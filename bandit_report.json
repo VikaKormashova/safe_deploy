@@ -1,0 +1,166 @@
+{
+  "errors": [],
+  "generated_at": "2026-05-27T21:21:41Z",
+  "metrics": {
+    "_totals": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 4,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 3,
+      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 267,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 0,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src/auth.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 3,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 3,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 51,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src/logger_config.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 20,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src/main.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 1,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 169,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src/schemas.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 27,
+      "nosec": 0,
+      "skipped_tests": 0
+    }
+  },
+  "results": [
+    {
+      "code": "8 users_db = {\n9     \"alice\": {\"username\": \"alice\", \"role\": \"user\", \"password\": \"alice123\"},\n10     \"bob\": {\"username\": \"bob\", \"role\": \"user\", \"password\": \"bob123\"},\n",
+      "col_offset": 51,
+      "end_col_offset": 61,
+      "filename": "src/auth.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 259,
+        "link": "https://cwe.mitre.org/data/definitions/259.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'alice123'",
+      "line_number": 9,
+      "line_range": [
+        9
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html",
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
+      "code": "9     \"alice\": {\"username\": \"alice\", \"role\": \"user\", \"password\": \"alice123\"},\n10     \"bob\": {\"username\": \"bob\", \"role\": \"user\", \"password\": \"bob123\"},\n11     \"admin\": {\"username\": \"admin\", \"role\": \"admin\", \"password\": \"admin123\"},\n",
+      "col_offset": 47,
+      "end_col_offset": 57,
+      "filename": "src/auth.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 259,
+        "link": "https://cwe.mitre.org/data/definitions/259.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'bob123'",
+      "line_number": 10,
+      "line_range": [
+        10
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html",
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
+      "code": "10     \"bob\": {\"username\": \"bob\", \"role\": \"user\", \"password\": \"bob123\"},\n11     \"admin\": {\"username\": \"admin\", \"role\": \"admin\", \"password\": \"admin123\"},\n12 }\n",
+      "col_offset": 52,
+      "end_col_offset": 62,
+      "filename": "src/auth.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 259,
+        "link": "https://cwe.mitre.org/data/definitions/259.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'admin123'",
+      "line_number": 11,
+      "line_range": [
+        11
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html",
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
+      "code": "200     import uvicorn\n201     uvicorn.run(app, host=\"0.0.0.0\", port=8000)\n",
+      "col_offset": 26,
+      "end_col_offset": 35,
+      "filename": "src/main.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 605,
+        "link": "https://cwe.mitre.org/data/definitions/605.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible binding to all interfaces.",
+      "line_number": 201,
+      "line_range": [
+        201
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b104_hardcoded_bind_all_interfaces.html",
+      "test_id": "B104",
+      "test_name": "hardcoded_bind_all_interfaces"
+    }
+  ]
+}
