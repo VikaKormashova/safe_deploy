@@ -8,4 +8,8 @@
 
 ## Bandit до исправлений
 
-![Скриншот2](images/scrin31.png)
+![Скриншот3](images/scrin31.png)
+
+## GitHub Actions
+
+![Скриншот4](images/scrin32.png)
