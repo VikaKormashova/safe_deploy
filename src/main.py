@@ -7,13 +7,12 @@ import os
 import filetype
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
+import traceback
+
+from src.auth import users_db, files_db, get_current_user, check_file_permission, get_user_files, save_file_metadata, STORAGE_DIR
+from src.logger_config import logger
 
 load_dotenv()
-
-from src.auth import (
-    users_db, files_db, get_current_user, check_file_permission,
-    get_user_files, save_file_metadata, STORAGE_DIR
-)
 
 app = FastAPI(title="Corporate File Manager")
 
@@ -28,12 +27,30 @@ cipher = Fernet(ENCRYPTION_KEY.encode())
 MAX_FILE_SIZE = 2 * 1024 * 1024
 ALLOWED_MIME_TYPES = ["image/jpeg", "image/png"]
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request: {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"Response: {response.status_code} for {request.method} {request.url.path}")
+    return response
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}\n{traceback.format_exc()}")
+    return HTMLResponse(
+        '{"detail": "We are sorry, something went wrong. Our team has been notified."}',
+        status_code=500,
+        media_type="application/json"
+    )
+
 @app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
     user = users_db.get(username)
     if not user or user["password"] != password:
+        logger.warning(f"SECURITY: Failed login attempt for username='{username}' from IP={request.client.host}")
         return HTMLResponse("Login failed", status_code=401)
     request.session["user"] = {"username": user["username"], "role": user["role"]}
+    logger.info(f"User '{username}' logged in successfully from IP={request.client.host}")
     return RedirectResponse(url="/files/my", status_code=303)
 
 @app.get("/login")
@@ -54,6 +71,8 @@ def login_form():
 
 @app.get("/logout")
 def logout(request: Request):
+    user = get_current_user(request)
+    logger.info(f"User '{user['username']}' logged out")
     request.session.clear()
     return RedirectResponse(url="/login")
 
@@ -76,6 +95,7 @@ def delete_file(request: Request, file_id: int):
     if file.get("path") and os.path.exists(file["path"]):
         os.remove(file["path"])
     files_db = [f for f in files_db if f["id"] != file_id]
+    logger.info(f"User '{user['username']}' deleted file id={file_id}, name='{file['filename']}'")
     return {"message": "File deleted"}
 
 @app.post("/files/upload")
@@ -86,12 +106,14 @@ async def upload_file(request: Request, file: UploadFile = File(...), encrypt: b
     kind = filetype.guess(await file.read(2048))
     await file.seek(0)
     if kind is None or kind.mime not in ALLOWED_MIME_TYPES:
+        logger.warning(f"User '{user['username']}' attempted to upload invalid file type: {file.filename}")
         raise HTTPException(status_code=400, detail=f"File type not allowed. Allowed: {ALLOWED_MIME_TYPES}")
 
     data = await file.read()
     size = len(data)
 
     if size > MAX_FILE_SIZE:
+        logger.warning(f"User '{user['username']}' attempted to upload oversized file: {file.filename} ({size} bytes)")
         raise HTTPException(status_code=413, detail="File too large. Max 2MB")
 
     if encrypt:
@@ -110,6 +132,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), encrypt: b
     except Exception as e:
         if os.path.exists(physical_path):
             os.remove(physical_path)
+        logger.error(f"Upload failed for user '{user['username']}': {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
     file_metadata = save_file_metadata(file.filename, user["username"], size, physical_path, is_encrypted=encrypt)
@@ -121,6 +144,7 @@ def download_file(request: Request, file_id: int):
     file_metadata = check_file_permission(file_id, user)
 
     if not file_metadata.get("path") or not os.path.exists(file_metadata["path"]):
+        logger.error(f"File not found on disk: id={file_id}, path='{file_metadata.get('path')}'")
         raise HTTPException(status_code=404, detail="File not found on server")
 
     with open(file_metadata["path"], "rb") as f:
@@ -130,12 +154,14 @@ def download_file(request: Request, file_id: int):
         try:
             file_data = cipher.decrypt(file_data)
         except Exception as e:
+            logger.error(f"Decryption failed for file id={file_id}: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Decryption failed: {str(e)}")
 
     from fastapi.responses import Response
     from urllib.parse import quote
 
     encoded_filename = quote(file_metadata["filename"])
+    logger.info(f"User '{user['username']}' downloaded file id={file_id}, name='{file_metadata['filename']}'")
     return Response(
         content=file_data,
         media_type="application/octet-stream",
@@ -159,6 +185,12 @@ def upload_form(request: Request):
     </body>
     </html>
     ''')
+
+@app.get("/cause_error")
+def cause_error():
+    logger.info("Test error endpoint called - about to cause ZeroDivisionError")
+    result = 1 / 0
+    return {"result": result}
 
 @app.get("/")
 def root():
